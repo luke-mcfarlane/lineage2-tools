@@ -294,11 +294,7 @@ export function DataTable({
 					</Table>
 				</DndContext>
 			</div>
-			<div className="flex items-center justify-between px-4">
-				<div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
-					{table.getFilteredSelectedRowModel().rows.length} of{" "}
-					{table.getFilteredRowModel().rows.length} row(s) selected.
-				</div>
+			<div className="flex items-center justify-end px-4">
 				<div className="flex w-full items-center gap-8 lg:w-fit">
 					<div className="flex w-fit items-center justify-center text-sm font-medium">
 						Page {table.getState().pagination.pageIndex + 1} of{" "}
