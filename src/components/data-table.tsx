@@ -60,6 +60,7 @@ const schema = z.object({
 });
 
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Table,
 	TableBody,
@@ -155,8 +156,10 @@ function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
 
 export function DataTable({
 	data: initialData,
+	loading = false,
 }: {
 	data: z.infer<typeof schema>[];
+	loading?: boolean;
 }) {
 	const [data, setData] = React.useState(() => initialData);
 	const [rowSelection, setRowSelection] = React.useState({});
@@ -248,7 +251,27 @@ export function DataTable({
 							))}
 						</TableHeader>
 						<TableBody className="**:data-[slot=table-cell]:first:w-8">
-							{table.getRowModel().rows?.length ? (
+							{loading ? (
+								Array.from({ length: 10 }, (_, index) => (
+									<TableRow key={`skeleton-row-${index + 1}`}>
+										<TableCell>
+											<Skeleton className="h-5 w-42" />
+										</TableCell>
+										<TableCell>
+											<Skeleton className="h-5 w-8" />
+										</TableCell>
+										<TableCell>
+											<Skeleton className="h-5 w-16" />
+										</TableCell>
+										<TableCell>
+											<Skeleton className="h-5 w-16" />
+										</TableCell>
+										<TableCell>
+											<Skeleton className="h-5 w-16" />
+										</TableCell>
+									</TableRow>
+								))
+							) : table.getRowModel().rows?.length ? (
 								<SortableContext
 									items={dataIds}
 									strategy={verticalListSortingStrategy}

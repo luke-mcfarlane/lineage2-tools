@@ -13,5 +13,5 @@ export async function MonsterTable({ spoilLevel, herbs }: MonsterTableProps) {
 }
 
 export function MonsterTableSkeleton() {
-	return <DataTable data={[]} />;
+	return <DataTable data={[]} loading={true} />;
 }
