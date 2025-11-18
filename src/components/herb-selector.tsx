@@ -20,7 +20,7 @@ export function HerbSelector() {
 		router.refresh();
 	};
 
-	const currentHerbs = searchParams.get("herbs") || "false";
+	const currentHerbs = searchParams.get("herbs") || "true";
 
 	return (
 		<Select value={currentHerbs} onValueChange={handleHerbChange}>

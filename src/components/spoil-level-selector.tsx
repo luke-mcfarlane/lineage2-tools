@@ -23,7 +23,7 @@ export function SpoilLevelSelector() {
 	return (
 		<div className="flex pl-6">
 			<Select
-				defaultValue={searchParams.get("spoilLevel")?.toString()}
+				defaultValue={searchParams.get("spoilLevel")?.toString() || "1"}
 				onValueChange={handleSpoilLevelChange}
 			>
 				<SelectTrigger>

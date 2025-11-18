@@ -9,8 +9,8 @@ interface PageProps {
 
 export default async function Page({ searchParams }: PageProps) {
 	const resolvedSearchParams = await searchParams;
-	const spoilLevel = parseInt(resolvedSearchParams.spoilLevel ?? "1", 10) || 1;
-	const herbs = resolvedSearchParams.herbs === "true";
+	const spoilLevelNum = parseInt(resolvedSearchParams.spoilLevel ?? "1", 10) || 1;
+	const herbsBool = resolvedSearchParams.herbs === undefined ? true : resolvedSearchParams.herbs === "true";
 
 	return (
 		<div className="flex flex-col gap-4">
@@ -19,12 +19,12 @@ export default async function Page({ searchParams }: PageProps) {
 				<HerbSelector />
 			</div>
 
-			<Suspense
-				key={`${spoilLevel}-${herbs}`}
-				fallback={<MonsterTableSkeleton />}
-			>
-				<MonsterTable spoilLevel={spoilLevel} herbs={herbs} />
-			</Suspense>
+		<Suspense
+			key={`${spoilLevelNum}-${herbsBool}`}
+			fallback={<MonsterTableSkeleton />}
+		>
+			<MonsterTable spoilLevel={spoilLevelNum} herbs={herbsBool} />
+		</Suspense>
 		</div>
 	);
 }
