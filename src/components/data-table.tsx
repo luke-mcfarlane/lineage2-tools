@@ -48,6 +48,7 @@ const schema = z.object({
 	name: z.string().nullable(),
 	level: z.number().nullable(),
 	type: z.string().nullable(),
+	orgHp: z.number().nullable(),
 	totalDrop: z
 		.union([z.number(), z.string()])
 		.transform((val) => (typeof val === "string" ? parseFloat(val) : val)),
@@ -88,6 +89,15 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
 				original: { level },
 			},
 		}) => level || "Unknown",
+	},
+	{
+		accessorKey: "orgHp",
+		header: "Health",
+		cell: ({
+			row: {
+				original: { orgHp },
+			},
+		}) => orgHp?.toLocaleString() || "Unknown",
 	},
 	{
 		accessorKey: "totalDrop",
@@ -259,6 +269,9 @@ export function DataTable({
 										</TableCell>
 										<TableCell>
 											<Skeleton className="h-5 w-8" />
+										</TableCell>
+										<TableCell>
+											<Skeleton className="h-5 w-16" />
 										</TableCell>
 										<TableCell>
 											<Skeleton className="h-5 w-16" />

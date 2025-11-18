@@ -97,6 +97,7 @@ export const getMonsters = async (spoilLevel: number, herbs: boolean) => {
 			name: monsters.name,
 			level: monsters.level,
 			type: monsters.type,
+			orgHp: monsters.orgHp,
 			totalDrop: sql<number>`coalesce("dropTotals".total, 0)`,
 			totalSpoil: sql<number>`coalesce("spoilTotals".total, 0)`,
 			total: sql<number>`coalesce("dropTotals".total, 0) + coalesce("spoilTotals".total, 0)`,
