@@ -1,16 +1,7 @@
-import { sql } from "drizzle-orm";
-import {
-	bigint,
-	boolean,
-	foreignKey,
-	integer,
-	numeric,
-	pgTable,
-	serial,
-	text,
-	timestamp,
-	varchar,
-} from "drizzle-orm/pg-core";
+import { pgTable, varchar, integer, numeric, boolean, bigint, timestamp, text, foreignKey, serial } from "drizzle-orm/pg-core"
+import { sql } from "drizzle-orm"
+
+
 
 export const monsters = pgTable("monsters", {
 	npcId: varchar("npc_id", { length: 20 }).primaryKey().notNull(),
@@ -19,24 +10,18 @@ export const monsters = pgTable("monsters", {
 	race: varchar({ length: 20 }),
 	level: integer(),
 	type: varchar({ length: 20 }),
-	acquireExpRate: numeric("acquire_exp_rate", { precision: 10, scale: 4 }),
-	acquireSp: numeric("acquire_sp", { precision: 15, scale: 4 }),
+	acquireExpRate: numeric("acquire_exp_rate", { precision: 10, scale:  4 }),
+	acquireSp: numeric("acquire_sp", { precision: 15, scale:  4 }),
 	orgHp: integer("org_hp"),
 	dex: integer(),
 	str: integer(),
 	men: integer(),
 	wit: integer(),
 	int: integer(),
-	baseMagicAttack: numeric("base_magic_attack", { precision: 10, scale: 2 }),
-	baseDefend: numeric("base_defend", { precision: 15, scale: 2 }),
-	basePhysicalAttack: numeric("base_physical_attack", {
-		precision: 10,
-		scale: 2,
-	}),
-	physicalHitModify: numeric("physical_hit_modify", {
-		precision: 10,
-		scale: 2,
-	}),
+	baseMagicAttack: numeric("base_magic_attack", { precision: 10, scale:  2 }),
+	baseDefend: numeric("base_defend", { precision: 15, scale:  2 }),
+	basePhysicalAttack: numeric("base_physical_attack", { precision: 10, scale:  2 }),
+	physicalHitModify: numeric("physical_hit_modify", { precision: 10, scale:  2 }),
 	groundHigh: varchar("ground_high", { length: 100 }),
 	groundLow: varchar("ground_low", { length: 100 }),
 	baseAttackRange: integer("base_attack_range"),
@@ -54,20 +39,20 @@ export const monsters = pgTable("monsters", {
 	slotLhand: varchar("slot_lhand", { length: 50 }),
 	collisionRadius: varchar("collision_radius", { length: 50 }),
 	collisionHeight: varchar("collision_height", { length: 50 }),
-	orgHpRegen: numeric("org_hp_regen", { precision: 10, scale: 2 }),
-	orgMpRegen: numeric("org_mp_regen", { precision: 10, scale: 2 }),
+	orgHpRegen: numeric("org_hp_regen", { precision: 10, scale:  2 }),
+	orgMpRegen: numeric("org_mp_regen", { precision: 10, scale:  2 }),
 	baseAttackType: varchar("base_attack_type", { length: 50 }),
 	baseDamageRange: varchar("base_damage_range", { length: 100 }),
 	baseRandDam: integer("base_rand_dam"),
 	baseCritical: integer("base_critical"),
-	baseAttackSpeed: numeric("base_attack_speed", { precision: 10, scale: 2 }),
+	baseAttackSpeed: numeric("base_attack_speed", { precision: 10, scale:  2 }),
 	baseReuseDelay: integer("base_reuse_delay"),
-	baseMagicDefend: numeric("base_magic_defend", { precision: 15, scale: 2 }),
+	baseMagicDefend: numeric("base_magic_defend", { precision: 15, scale:  2 }),
 	baseAttributeAttack: varchar("base_attribute_attack", { length: 100 }),
 	baseAttributeDefend: varchar("base_attribute_defend", { length: 100 }),
 	physicalAvoidModify: integer("physical_avoid_modify"),
 	shieldDefenseRate: integer("shield_defense_rate"),
-	shieldDefense: numeric("shield_defense", { precision: 10, scale: 2 }),
+	shieldDefense: numeric("shield_defense", { precision: 10, scale:  2 }),
 	safeHeight: integer("safe_height"),
 	soulshotCount: integer("soulshot_count"),
 	spiritshotCount: integer("spiritshot_count"),
@@ -87,15 +72,11 @@ export const monsters = pgTable("monsters", {
 	showNameTag: boolean("show_name_tag"),
 	eventFlag: boolean("event_flag"),
 	unsowing: boolean(),
-	acquireRp: numeric("acquire_rp", { precision: 10, scale: 2 }),
+	acquireRp: numeric("acquire_rp", { precision: 10, scale:  2 }),
 	chronicleId: integer("chronicle_id"),
 	normalizedName: varchar("normalized_name", { length: 100 }),
-	createdAt: timestamp("created_at", { mode: "string" }).default(
-		sql`CURRENT_TIMESTAMP`,
-	),
-	updatedAt: timestamp("updated_at", { mode: "string" }).default(
-		sql`CURRENT_TIMESTAMP`,
-	),
+	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const items = pgTable("items", {
@@ -123,134 +104,104 @@ export const items = pgTable("items", {
 	attackSpeed: integer("attack_speed"),
 	isDrop: boolean("is_drop"),
 	isTrade: boolean("is_trade"),
-	createdAt: timestamp("created_at", { mode: "string" }).default(
-		sql`CURRENT_TIMESTAMP`,
-	),
-	updatedAt: timestamp("updated_at", { mode: "string" }).default(
-		sql`CURRENT_TIMESTAMP`,
-	),
+	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
 });
 
-export const monsterDrops = pgTable(
-	"monster_drops",
-	{
-		id: serial().primaryKey().notNull(),
-		monsterNpcId: varchar("monster_npc_id", { length: 20 }).notNull(),
-		monsterName: varchar("monster_name", { length: 100 }),
-		itemId: varchar("item_id", { length: 20 }).notNull(),
-		itemName: varchar("item_name", { length: 100 }).notNull(),
-		itemType: varchar("item_type", { length: 50 }),
-		minQuantity: integer("min_quantity"),
-		maxQuantity: integer("max_quantity"),
-		dropChance: numeric("drop_chance", { precision: 10, scale: 6 }),
-		spoilType: varchar("spoil_type", { length: 10 }),
-		l2OffName: varchar("l2off_name", { length: 100 }),
-		icon: varchar({ length: 200 }),
-		crystalType: varchar("crystal_type", { length: 20 }),
-		createdAt: timestamp("created_at", { mode: "string" }).default(
-			sql`CURRENT_TIMESTAMP`,
-		),
-	},
-	(table) => [
-		foreignKey({
+export const monsterDrops = pgTable("monster_drops", {
+	id: serial().primaryKey().notNull(),
+	monsterNpcId: varchar("monster_npc_id", { length: 20 }).notNull(),
+	monsterName: varchar("monster_name", { length: 100 }),
+	itemId: varchar("item_id", { length: 20 }).notNull(),
+	itemName: varchar("item_name", { length: 100 }).notNull(),
+	itemType: varchar("item_type", { length: 50 }),
+	minQuantity: integer("min_quantity"),
+	maxQuantity: integer("max_quantity"),
+	dropChance: numeric("drop_chance", { precision: 10, scale:  6 }),
+	spoilType: varchar("spoil_type", { length: 10 }),
+	l2OffName: varchar("l2off_name", { length: 100 }),
+	icon: varchar({ length: 200 }),
+	crystalType: varchar("crystal_type", { length: 20 }),
+	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+	foreignKey({
 			columns: [table.monsterNpcId],
 			foreignColumns: [monsters.npcId],
-			name: "monster_drops_monster_npc_id_fkey",
+			name: "monster_drops_monster_npc_id_fkey"
 		}),
-		foreignKey({
+	foreignKey({
 			columns: [table.itemId],
 			foreignColumns: [items.itemId],
-			name: "monster_drops_item_id_fkey",
+			name: "monster_drops_item_id_fkey"
 		}),
-	],
-);
+]);
 
-export const monsterSpoils = pgTable(
-	"monster_spoils",
-	{
-		id: serial().primaryKey().notNull(),
-		monsterNpcId: varchar("monster_npc_id", { length: 20 }).notNull(),
-		monsterName: varchar("monster_name", { length: 100 }),
-		itemId: varchar("item_id", { length: 20 }).notNull(),
-		itemName: varchar("item_name", { length: 100 }).notNull(),
-		itemType: varchar("item_type", { length: 50 }),
-		minQuantity: integer("min_quantity"),
-		maxQuantity: integer("max_quantity"),
-		dropChance: numeric("drop_chance", { precision: 10, scale: 6 }),
-		spoilType: varchar("spoil_type", { length: 10 }),
-		l2OffName: varchar("l2off_name", { length: 100 }),
-		icon: varchar({ length: 200 }),
-		crystalType: varchar("crystal_type", { length: 20 }),
-		createdAt: timestamp("created_at", { mode: "string" }).default(
-			sql`CURRENT_TIMESTAMP`,
-		),
-	},
-	(table) => [
-		foreignKey({
+export const monsterSpoils = pgTable("monster_spoils", {
+	id: serial().primaryKey().notNull(),
+	monsterNpcId: varchar("monster_npc_id", { length: 20 }).notNull(),
+	monsterName: varchar("monster_name", { length: 100 }),
+	itemId: varchar("item_id", { length: 20 }).notNull(),
+	itemName: varchar("item_name", { length: 100 }).notNull(),
+	itemType: varchar("item_type", { length: 50 }),
+	minQuantity: integer("min_quantity"),
+	maxQuantity: integer("max_quantity"),
+	dropChance: numeric("drop_chance", { precision: 10, scale:  6 }),
+	spoilType: varchar("spoil_type", { length: 10 }),
+	l2OffName: varchar("l2off_name", { length: 100 }),
+	icon: varchar({ length: 200 }),
+	crystalType: varchar("crystal_type", { length: 20 }),
+	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+	foreignKey({
 			columns: [table.monsterNpcId],
 			foreignColumns: [monsters.npcId],
-			name: "monster_spoils_monster_npc_id_fkey",
+			name: "monster_spoils_monster_npc_id_fkey"
 		}),
-		foreignKey({
+	foreignKey({
 			columns: [table.itemId],
 			foreignColumns: [items.itemId],
-			name: "monster_spoils_item_id_fkey",
+			name: "monster_spoils_item_id_fkey"
 		}),
-	],
-);
+]);
 
-export const monsterHerbs = pgTable(
-	"monster_herbs",
-	{
-		id: serial().primaryKey().notNull(),
-		monsterNpcId: varchar("monster_npc_id", { length: 20 }).notNull(),
-		monsterName: varchar("monster_name", { length: 100 }),
-		itemId: varchar("item_id", { length: 20 }).notNull(),
-		itemName: varchar("item_name", { length: 100 }).notNull(),
-		itemType: varchar("item_type", { length: 50 }),
-		minQuantity: integer("min_quantity"),
-		maxQuantity: integer("max_quantity"),
-		dropChance: numeric("drop_chance", { precision: 10, scale: 6 }),
-		spoilType: varchar("spoil_type", { length: 10 }),
-		l2OffName: varchar("l2off_name", { length: 100 }),
-		icon: varchar({ length: 200 }),
-		crystalType: varchar("crystal_type", { length: 20 }),
-		createdAt: timestamp("created_at", { mode: "string" }).default(
-			sql`CURRENT_TIMESTAMP`,
-		),
-	},
-	(table) => [
-		foreignKey({
+export const monsterHerbs = pgTable("monster_herbs", {
+	id: serial().primaryKey().notNull(),
+	monsterNpcId: varchar("monster_npc_id", { length: 20 }).notNull(),
+	monsterName: varchar("monster_name", { length: 100 }),
+	itemId: varchar("item_id", { length: 20 }).notNull(),
+	itemName: varchar("item_name", { length: 100 }).notNull(),
+	itemType: varchar("item_type", { length: 50 }),
+	minQuantity: integer("min_quantity"),
+	maxQuantity: integer("max_quantity"),
+	dropChance: numeric("drop_chance", { precision: 10, scale:  6 }),
+	spoilType: varchar("spoil_type", { length: 10 }),
+	l2OffName: varchar("l2off_name", { length: 100 }),
+	icon: varchar({ length: 200 }),
+	crystalType: varchar("crystal_type", { length: 20 }),
+	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+	foreignKey({
 			columns: [table.monsterNpcId],
 			foreignColumns: [monsters.npcId],
-			name: "monster_herbs_monster_npc_id_fkey",
+			name: "monster_herbs_monster_npc_id_fkey"
 		}),
-		foreignKey({
+	foreignKey({
 			columns: [table.itemId],
 			foreignColumns: [items.itemId],
-			name: "monster_herbs_item_id_fkey",
+			name: "monster_herbs_item_id_fkey"
 		}),
-	],
-);
+]);
 
-export const prices = pgTable(
-	"prices",
-	{
-		id: serial().primaryKey().notNull(),
-		itemId: varchar("item_id", { length: 20 }).notNull(),
-		price: numeric({ precision: 15, scale: 2 }).notNull(),
-		createdAt: timestamp("created_at", { mode: "string" }).default(
-			sql`CURRENT_TIMESTAMP`,
-		),
-		updatedAt: timestamp("updated_at", { mode: "string" }).default(
-			sql`CURRENT_TIMESTAMP`,
-		),
-	},
-	(table) => [
-		foreignKey({
+export const prices = pgTable("prices", {
+	id: serial().primaryKey().notNull(),
+	itemId: varchar("item_id", { length: 20 }).notNull(),
+	price: numeric({ precision: 15, scale:  2 }).notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+	foreignKey({
 			columns: [table.itemId],
 			foreignColumns: [items.itemId],
-			name: "prices_item_id_fkey",
+			name: "prices_item_id_fkey"
 		}),
-	],
-);
+]);
