@@ -118,3 +118,72 @@ export const getItemKeys = async () => {
 	});
 };
 
+export type IngredientBreakdown = {
+	itemId: string;
+	itemName: string;
+	quantity: number;
+	unitPrice: number;
+	totalCost: number;
+	isKeyItem: boolean;
+};
+
+/**
+ * Get item keys values as a map (itemId -> value)
+ * This is used for calculating spoil values
+ */
+export const getItemKeysValueMap = async (): Promise<Map<string, number>> => {
+	const itemKeys = await getItemKeys();
+	const valueMap = new Map<string, number>();
+	
+	for (const itemKey of itemKeys) {
+		valueMap.set(itemKey.itemId, itemKey.value);
+	}
+	
+	return valueMap;
+};
+
+export const getRecipeIngredientBreakdown = async (
+	recipeId: string
+): Promise<IngredientBreakdown[]> => {
+	// Get all item IDs that have prices
+	const pricedItems = await db
+		.select({ itemId: prices.itemId })
+		.from(prices);
+
+	const pricedItemIds = pricedItems.map((p) => p.itemId);
+
+	if (pricedItemIds.length === 0) {
+		return [];
+	}
+
+	// Build the IN clause safely (escape single quotes)
+	const inClause = pricedItemIds
+		.map((id) => `'${String(id).replace(/'/g, "''")}'`)
+		.join(", ");
+
+	// Get all base ingredients for this recipe with their prices
+	const results = await db.execute(
+		sql.raw(`
+			SELECT 
+				rbi.item_id,
+				rbi.item_name,
+				rbi.quantity,
+				COALESCE(p.price, 0) as unit_price,
+				CASE WHEN rbi.item_id NOT IN (${inClause}) THEN true ELSE false END as is_key_item
+			FROM recipe_base_ingredients rbi
+			LEFT JOIN prices p ON rbi.item_id = p.item_id
+			WHERE rbi.recipe_id = '${String(recipeId).replace(/'/g, "''")}'
+			ORDER BY is_key_item DESC, rbi.item_name ASC
+		`)
+	);
+
+	return results.rows.map((row: any) => ({
+		itemId: row.item_id,
+		itemName: row.item_name || "Unknown",
+		quantity: parseInt(row.quantity) || 0,
+		unitPrice: parseFloat(row.unit_price) || 0,
+		totalCost: (parseInt(row.quantity) || 0) * (parseFloat(row.unit_price) || 0),
+		isKeyItem: row.is_key_item === true,
+	}));
+};
+

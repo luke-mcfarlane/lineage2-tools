@@ -24,12 +24,22 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+	Drawer,
+	DrawerClose,
+	DrawerContent,
+	DrawerDescription,
+	DrawerFooter,
+	DrawerHeader,
+	DrawerTitle,
+} from "@/components/ui/drawer";
+import {
 	IconChevronLeft,
 	IconChevronRight,
 	IconChevronsLeft,
 	IconChevronsRight,
 	IconSearch,
 } from "@tabler/icons-react";
+import type { IngredientBreakdown } from "@/api/item-keys";
 
 export type ItemKey = {
 	itemId: string;
@@ -113,6 +123,12 @@ export function ItemKeysDataTable({
 		{ id: "value", desc: true },
 	]);
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+	const [selectedItem, setSelectedItem] = useState<ItemKey | null>(null);
+	const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+	const [ingredientBreakdown, setIngredientBreakdown] = useState<
+		IngredientBreakdown[]
+	>([]);
+	const [isLoadingBreakdown, setIsLoadingBreakdown] = useState(false);
 
 	const table = useReactTable({
 		data,
@@ -133,6 +149,28 @@ export function ItemKeysDataTable({
 			},
 		},
 	});
+
+	const handleRowClick = async (item: ItemKey) => {
+		setSelectedItem(item);
+		setIsDrawerOpen(true);
+		setIsLoadingBreakdown(true);
+
+		try {
+			const response = await fetch(
+				`/api/item-keys/${item.recipeId}/breakdown`
+			);
+			if (!response.ok) {
+				throw new Error("Failed to fetch ingredient breakdown");
+			}
+			const breakdown = await response.json();
+			setIngredientBreakdown(breakdown);
+		} catch (error) {
+			console.error("Error fetching ingredient breakdown:", error);
+			setIngredientBreakdown([]);
+		} finally {
+			setIsLoadingBreakdown(false);
+		}
+	};
 
 	return (
 		<div className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6">
@@ -196,7 +234,11 @@ export function ItemKeysDataTable({
 							))
 						) : table.getRowModel().rows?.length ? (
 							table.getRowModel().rows.map((row) => (
-								<TableRow key={row.id}>
+								<TableRow
+									key={row.id}
+									onClick={() => handleRowClick(row.original)}
+									className="cursor-pointer hover:bg-muted/50 transition-colors"
+								>
 									{row.getVisibleCells().map((cell) => (
 										<TableCell key={cell.id}>
 											{flexRender(
@@ -269,6 +311,117 @@ export function ItemKeysDataTable({
 					</div>
 				</div>
 			</div>
+
+			<Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+				<DrawerContent className="max-h-[80vh]">
+					<DrawerHeader>
+						<DrawerTitle>
+							{selectedItem?.itemName || "Ingredient Breakdown"}
+						</DrawerTitle>
+						<DrawerDescription>
+							Recipe: {selectedItem?.recipeName}
+							<br />
+							Product: {selectedItem?.productItemName} (x
+							{selectedItem?.productQuantity})
+						</DrawerDescription>
+					</DrawerHeader>
+					<div className="overflow-y-auto px-4 pb-4">
+						{isLoadingBreakdown ? (
+							<div className="flex items-center justify-center py-8">
+								<Skeleton className="h-8 w-full max-w-md" />
+							</div>
+						) : ingredientBreakdown.length === 0 ? (
+							<div className="text-center py-8 text-muted-foreground">
+								No ingredient data available
+							</div>
+						) : (
+							<div className="space-y-2">
+								<div className="rounded-lg border">
+									<Table>
+										<TableHeader>
+											<TableRow>
+												<TableHead>Ingredient</TableHead>
+												<TableHead className="text-right">Quantity</TableHead>
+												<TableHead className="text-right">Unit Price</TableHead>
+												<TableHead className="text-right">Total Cost</TableHead>
+											</TableRow>
+										</TableHeader>
+										<TableBody>
+											{ingredientBreakdown.map((ingredient, index) => (
+												<TableRow
+													key={`${ingredient.itemId}-${index}`}
+													className={
+														ingredient.isKeyItem
+															? "bg-muted/50 font-medium"
+															: ""
+													}
+												>
+													<TableCell>
+														{ingredient.itemName}
+														{ingredient.isKeyItem && (
+															<span className="ml-2 text-xs text-muted-foreground">
+																(Key Item)
+															</span>
+														)}
+													</TableCell>
+													<TableCell className="text-right">
+														{ingredient.quantity.toLocaleString()}
+													</TableCell>
+													<TableCell className="text-right">
+														{ingredient.unitPrice > 0
+															? ingredient.unitPrice.toLocaleString("en-US", {
+																	minimumFractionDigits: 0,
+																	maximumFractionDigits: 0,
+																})
+															: "—"}
+													</TableCell>
+													<TableCell className="text-right">
+														{ingredient.totalCost > 0
+															? ingredient.totalCost.toLocaleString("en-US", {
+																	minimumFractionDigits: 0,
+																	maximumFractionDigits: 0,
+																})
+															: "—"}
+													</TableCell>
+												</TableRow>
+											))}
+										</TableBody>
+									</Table>
+								</div>
+								<div className="mt-4 rounded-lg border bg-muted/30 p-4">
+									<div className="flex justify-between items-center">
+										<span className="font-medium">Total Ingredients Cost:</span>
+										<span className="font-semibold">
+											{ingredientBreakdown
+												.reduce((sum, ing) => sum + ing.totalCost, 0)
+												.toLocaleString("en-US", {
+													minimumFractionDigits: 0,
+													maximumFractionDigits: 0,
+												})}
+										</span>
+									</div>
+									{selectedItem && (
+										<div className="flex justify-between items-center mt-2 text-sm text-muted-foreground">
+											<span>Crystal Value:</span>
+											<span>
+												{selectedItem.crystalValue.toLocaleString("en-US", {
+													minimumFractionDigits: 0,
+													maximumFractionDigits: 0,
+												})}
+											</span>
+										</div>
+									)}
+								</div>
+							</div>
+						)}
+					</div>
+					<DrawerFooter>
+						<DrawerClose asChild>
+							<Button variant="outline">Close</Button>
+						</DrawerClose>
+					</DrawerFooter>
+				</DrawerContent>
+			</Drawer>
 		</div>
 	);
 }

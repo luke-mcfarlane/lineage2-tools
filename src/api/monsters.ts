@@ -7,6 +7,7 @@ import {
 	monsters,
 	prices,
 } from "@/db/schema";
+import { getItemKeysValueMap } from "@/api/item-keys";
 
 const spoilLevelRanges = new Map<number, [number, number]>([
 	[1, [5, 15]],
@@ -25,99 +26,134 @@ const spoilLevelRanges = new Map<number, [number, number]>([
 // S: top 10%, A: top 20%, B: top 30%, C: top 40%, D: top 50%
 
 export const getMonsters = async (spoilLevel: number, herbs: boolean) => {
-	const dropTotals = db
-		.select({
-			monsterNpcId: monsterDrops.monsterNpcId,
-			total: sum(
-				sql`
-					round(((monster_drops.min_quantity + monster_drops.max_quantity) / 2) * 
-					(monster_drops.drop_chance / 100) * 
-					CASE 
-						WHEN prices.price IS NOT NULL THEN prices.price
-						ELSE GREATEST(
-							CASE 
-								WHEN items.crystal_type IN ('a', 'b', 'c', 'd', 's') AND items.crystal_count IS NOT NULL THEN
-									items.crystal_count * COALESCE(
-										CASE items.crystal_type
-											WHEN 'd' THEN (SELECT price FROM prices WHERE item_id = '1458')
-											WHEN 'c' THEN (SELECT price FROM prices WHERE item_id = '1459')
-											WHEN 'b' THEN (SELECT price FROM prices WHERE item_id = '1460')
-											WHEN 'a' THEN (SELECT price FROM prices WHERE item_id = '1461')
-											WHEN 's' THEN (SELECT price FROM prices WHERE item_id = '1462')
-										END, 0)
-								ELSE 0
-							END,
-							items.default_price / 2
-						)
-					END, 2)
-				`,
-			).as("total"),
-		})
-		.from(monsterDrops)
-		.innerJoin(items, eq(monsterDrops.itemId, items.itemId))
-		.leftJoin(prices, eq(monsterDrops.itemId, prices.itemId))
-		.groupBy(monsterDrops.monsterNpcId)
-		.as("dropTotals");
+	// Get item keys values map
+	const itemKeysValueMap = await getItemKeysValueMap();
+	
+	// Build VALUES clause for item keys (only include items that have values)
+	const itemKeysValues = Array.from(itemKeysValueMap.entries())
+		.map(([itemId, value]) => `('${String(itemId).replace(/'/g, "''")}', ${value})`)
+		.join(", ");
+	
+	const itemKeysCTE = itemKeysValues.length > 0
+		? `WITH item_keys_values AS (
+			SELECT * FROM (VALUES ${itemKeysValues}) AS t(item_id, value)
+		),`
+		: `WITH`;
 
-	const spoilTotals = db
-		.select({
-			monsterNpcId: monsterSpoils.monsterNpcId,
-			total: sum(
-				sql`
-					round(((monster_spoils.min_quantity + monster_spoils.max_quantity) / 2) * 
-					(monster_spoils.drop_chance / 100) * 
-					CASE 
-						WHEN prices.price IS NOT NULL THEN prices.price
-						ELSE GREATEST(
-							CASE 
-								WHEN items.crystal_type IN ('a', 'b', 'c', 'd', 's') AND items.crystal_count IS NOT NULL THEN
-									items.crystal_count * COALESCE(
-										CASE items.crystal_type
-											WHEN 'd' THEN (SELECT price FROM prices WHERE item_id = '1458')
-											WHEN 'c' THEN (SELECT price FROM prices WHERE item_id = '1459')
-											WHEN 'b' THEN (SELECT price FROM prices WHERE item_id = '1460')
-											WHEN 'a' THEN (SELECT price FROM prices WHERE item_id = '1461')
-											WHEN 's' THEN (SELECT price FROM prices WHERE item_id = '1462')
-										END, 0)
-								ELSE 0
-							END,
-							items.default_price / 2
-						)
-					END, 2)
-				`,
-			).as("total"),
-		})
-		.from(monsterSpoils)
-		.innerJoin(items, eq(monsterSpoils.itemId, items.itemId))
-		.leftJoin(prices, eq(monsterSpoils.itemId, prices.itemId))
-		.groupBy(monsterSpoils.monsterNpcId)
-		.as("spoilTotals");
+	const itemKeysJoinDrops = itemKeysValues.length > 0
+		? `LEFT JOIN item_keys_values ikv_drops ON md.item_id = ikv_drops.item_id`
+		: "";
 
-	const results = await db
-		.select({
-			npcId: monsters.npcId,
-			name: monsters.name,
-			level: monsters.level,
-			type: monsters.type,
-			totalDrop: sql<number>`coalesce("dropTotals".total, 0)`,
-			totalSpoil: sql<number>`coalesce("spoilTotals".total, 0)`,
-			total: sql<number>`coalesce("dropTotals".total, 0) + coalesce("spoilTotals".total, 0)`,
-		})
-		.from(monsters)
-		.leftJoin(dropTotals, eq(monsters.npcId, dropTotals.monsterNpcId))
-		.leftJoin(spoilTotals, eq(monsters.npcId, spoilTotals.monsterNpcId))
-		.where(
-			and(
-				gte(monsters.level, spoilLevelRanges.get(spoilLevel)?.[0] ?? 0),
-				lte(monsters.level, spoilLevelRanges.get(spoilLevel)?.[1] ?? 0),
-				ne(monsters.type, "boss"),
-				eq(monsters.herbs, herbs ? 1 : 0),
+	const itemKeysJoinSpoils = itemKeysValues.length > 0
+		? `LEFT JOIN item_keys_values ikv_spoils ON ms.item_id = ikv_spoils.item_id`
+		: "";
+
+	const itemKeysValueSelectDrops = itemKeysValues.length > 0
+		? `COALESCE(ikv_drops.value, 0)`
+		: `0`;
+
+	const itemKeysValueSelectSpoils = itemKeysValues.length > 0
+		? `COALESCE(ikv_spoils.value, 0)`
+		: `0`;
+
+	const [minLevel, maxLevel] = spoilLevelRanges.get(spoilLevel) ?? [0, 0];
+	const herbsValue = herbs ? 1 : 0;
+
+	// Use raw SQL for the entire query to support CTEs
+	const results = await db.execute(
+		sql.raw(`
+			${itemKeysCTE}
+			drop_totals AS (
+				SELECT 
+					md.monster_npc_id,
+					SUM(
+						ROUND(((md.min_quantity + md.max_quantity) / 2.0) * 
+						(md.drop_chance / 100.0) * 
+						CASE 
+							WHEN p.price IS NOT NULL THEN p.price
+							ELSE GREATEST(
+								CASE 
+									WHEN i.crystal_type IN ('a', 'b', 'c', 'd', 's') AND i.crystal_count IS NOT NULL THEN
+										i.crystal_count * COALESCE(
+											CASE i.crystal_type
+												WHEN 'd' THEN (SELECT price FROM prices WHERE item_id = '1458')
+												WHEN 'c' THEN (SELECT price FROM prices WHERE item_id = '1459')
+												WHEN 'b' THEN (SELECT price FROM prices WHERE item_id = '1460')
+												WHEN 'a' THEN (SELECT price FROM prices WHERE item_id = '1461')
+												WHEN 's' THEN (SELECT price FROM prices WHERE item_id = '1462')
+											END, 0)
+									ELSE 0
+								END,
+								i.default_price / 2,
+								${itemKeysValueSelectDrops}
+							)
+						END, 2)
+					) as total
+				FROM monster_drops md
+				INNER JOIN items i ON md.item_id = i.item_id
+				LEFT JOIN prices p ON md.item_id = p.item_id
+				${itemKeysJoinDrops}
+				GROUP BY md.monster_npc_id
 			),
-		)
-		.orderBy(
-			sql`coalesce("dropTotals".total, 0) + coalesce("spoilTotals".total, 0) DESC`,
-		)
-		.limit(20);
+			spoil_totals AS (
+				SELECT 
+					ms.monster_npc_id,
+					SUM(
+						ROUND(((ms.min_quantity + ms.max_quantity) / 2.0) * 
+						(ms.drop_chance / 100.0) * 
+						CASE 
+							WHEN p.price IS NOT NULL THEN p.price
+							ELSE GREATEST(
+								CASE 
+									WHEN i.crystal_type IN ('a', 'b', 'c', 'd', 's') AND i.crystal_count IS NOT NULL THEN
+										i.crystal_count * COALESCE(
+											CASE i.crystal_type
+												WHEN 'd' THEN (SELECT price FROM prices WHERE item_id = '1458')
+												WHEN 'c' THEN (SELECT price FROM prices WHERE item_id = '1459')
+												WHEN 'b' THEN (SELECT price FROM prices WHERE item_id = '1460')
+												WHEN 'a' THEN (SELECT price FROM prices WHERE item_id = '1461')
+												WHEN 's' THEN (SELECT price FROM prices WHERE item_id = '1462')
+											END, 0)
+									ELSE 0
+								END,
+								i.default_price / 2,
+								${itemKeysValueSelectSpoils}
+							)
+						END, 2)
+					) as total
+				FROM monster_spoils ms
+				INNER JOIN items i ON ms.item_id = i.item_id
+				LEFT JOIN prices p ON ms.item_id = p.item_id
+				${itemKeysJoinSpoils}
+				GROUP BY ms.monster_npc_id
+			)
+			SELECT 
+				m.npc_id,
+				m.name,
+				m.level,
+				m.type,
+				COALESCE(dt.total, 0) as total_drop,
+				COALESCE(st.total, 0) as total_spoil,
+				COALESCE(dt.total, 0) + COALESCE(st.total, 0) as total
+			FROM monsters m
+			LEFT JOIN drop_totals dt ON m.npc_id = dt.monster_npc_id
+			LEFT JOIN spoil_totals st ON m.npc_id = st.monster_npc_id
+			WHERE m.level >= ${minLevel}
+				AND m.level <= ${maxLevel}
+				AND m.type != 'boss'
+				AND m.herbs = ${herbsValue}
+			ORDER BY COALESCE(dt.total, 0) + COALESCE(st.total, 0) DESC
+			LIMIT 20
+		`)
+	);
 
-	return results;
+	return results.rows.map((row: any) => ({
+		npcId: row.npc_id,
+		name: row.name,
+		level: row.level,
+		type: row.type,
+		totalDrop: parseFloat(row.total_drop) || 0,
+		totalSpoil: parseFloat(row.total_spoil) || 0,
+		total: parseFloat(row.total) || 0,
+	}));
 };
