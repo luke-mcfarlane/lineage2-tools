@@ -11,11 +11,18 @@ const headers = {
 	"/market-prices": {
 		title: "Market Prices",
 	},
+	"/item-keys": {
+		title: "Item Keys",
+	},
 };
 
 export function SiteHeader() {
 	const pathname = usePathname();
-	if (pathname !== "/spoil-calculator" && pathname !== "/market-prices") {
+	if (
+		pathname !== "/spoil-calculator" &&
+		pathname !== "/market-prices" &&
+		pathname !== "/item-keys"
+	) {
 		return null;
 	}
 

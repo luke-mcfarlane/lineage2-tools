@@ -22,6 +22,8 @@ const spoilLevelRanges = new Map<number, [number, number]>([
 	[11, [70, 75]],
 ]);
 
+// S: top 10%, A: top 20%, B: top 30%, C: top 40%, D: top 50%
+
 export const getMonsters = async (spoilLevel: number, herbs: boolean) => {
 	const dropTotals = db
 		.select({

@@ -3,6 +3,7 @@
 import {
 	IconCalculator,
 	IconInnerShadowTop,
+	IconKey,
 	IconShoppingCart,
 } from "@tabler/icons-react";
 import { NavMain } from "@/components/nav-main";
@@ -33,6 +34,11 @@ const data = {
 			title: "Market Prices",
 			url: "/market-prices",
 			icon: IconShoppingCart,
+		},
+		{
+			title: "Item Keys",
+			url: "/item-keys",
+			icon: IconKey,
 		},
 	],
 };

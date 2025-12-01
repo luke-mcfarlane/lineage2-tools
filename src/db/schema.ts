@@ -205,3 +205,50 @@ export const prices = pgTable("prices", {
 			name: "prices_item_id_fkey"
 		}),
 ]);
+
+export const recipes = pgTable("recipes", {
+	recipeId: varchar("recipe_id", { length: 20 }).primaryKey().notNull(),
+	name: varchar({ length: 200 }).notNull(),
+	description: text(),
+	level: varchar({ length: 10 }),
+	grade: varchar({ length: 20 }),
+	part: varchar({ length: 50 }),
+	productItemId: varchar("product_item_id", { length: 20 }).notNull(),
+	productItemName: varchar("product_item_name", { length: 100 }),
+	productQuantity: integer("product_quantity").notNull().default(1),
+	recipeItemId: varchar("recipe_item_id", { length: 20 }),
+	recipeItemName: varchar("recipe_item_name", { length: 100 }),
+	recipeItemQuantity: integer("recipe_item_quantity"),
+	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const recipeIngredients = pgTable("recipe_ingredients", {
+	id: serial().primaryKey().notNull(),
+	recipeId: varchar("recipe_id", { length: 20 }).notNull(),
+	itemId: varchar("item_id", { length: 20 }).notNull(),
+	itemName: varchar("item_name", { length: 100 }).notNull(),
+	quantity: integer().notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+	foreignKey({
+			columns: [table.recipeId],
+			foreignColumns: [recipes.recipeId],
+			name: "recipe_ingredients_recipe_id_fkey"
+		}),
+]);
+
+export const recipeBaseIngredients = pgTable("recipe_base_ingredients", {
+	id: serial().primaryKey().notNull(),
+	recipeId: varchar("recipe_id", { length: 20 }).notNull(),
+	itemId: varchar("item_id", { length: 20 }).notNull(),
+	itemName: varchar("item_name", { length: 100 }).notNull(),
+	quantity: integer().notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+	foreignKey({
+			columns: [table.recipeId],
+			foreignColumns: [recipes.recipeId],
+			name: "recipe_base_ingredients_recipe_id_fkey"
+		}),
+]);
